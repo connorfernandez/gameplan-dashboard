@@ -17,7 +17,7 @@ We build it pitch-type by pitch-type:
 5. Express the result on a 100 scale vs. overall league xwOBA:
    100 = league average, 110 = 10% above, 90 = 10% below.
 
-All inputs are precomputed parquet aggregates (no live queries).
+All inputs are precomputed CSV aggregates (no live queries).
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ import pandas as pd
 # (i.e. the parent of the engine/ package).
 PROCESSED_DIR_DEFAULT = Path(__file__).resolve().parent.parent / "data" / "processed"
 
-# Every parquet table the engine expects to find in the processed dir.
+# Every CSV table the engine expects to find in the processed dir.
 TABLES = (
     "hitter_pitch",    # batter_id, batter_name, pitch_type, p_throws, n, whiff_pct, xwoba, slg
     "pitcher_pitch",   # pitcher_id, pitcher_name, pitch_type, stand, usage_pct, avg_velo,
@@ -55,29 +55,33 @@ _PITCHER_ROLES = ("pitcher", "both")
 
 @lru_cache(maxsize=4)
 def load_aggregates(processed_dir: str | Path) -> dict[str, pd.DataFrame]:
-    """Load every aggregate parquet table into a dict of DataFrames.
+    """Load every aggregate CSV table into a dict of DataFrames.
 
     Cached (lru_cache) so repeated calls — e.g. one per matchup rating —
-    don't re-read parquet from disk. Raises FileNotFoundError with a clear
+    don't re-read CSVs from disk. Raises FileNotFoundError with a clear
     message naming the missing file.
+
+    (CSVs, not parquet, are committed in-repo: GitHub's file API only
+    transports text reliably, and at ~1.5MB total the speed difference is
+    negligible. Raw day-files stay parquet locally.)
     """
     d = Path(processed_dir)
     if not d.is_dir():
         raise FileNotFoundError(
             f"Processed data directory not found: {d}\n"
-            "Expected the precomputed parquet tables at data/processed/ "
+            "Expected the precomputed CSV tables at data/processed/ "
             "(built by the data pipeline; see README.md)."
         )
     tables: dict[str, pd.DataFrame] = {}
     for name in TABLES:
-        f = d / f"{name}.parquet"
+        f = d / f"{name}.csv"
         if not f.exists():
             raise FileNotFoundError(
                 f"Missing required table: {f}\n"
                 "Run the data pipeline first (see README.md) so that all of "
-                f"{', '.join(t + '.parquet' for t in TABLES)} exist."
+                f"{', '.join(t + '.csv' for t in TABLES)} exist."
             )
-        tables[name] = pd.read_parquet(f)
+        tables[name] = pd.read_csv(f)
     return tables
 
 
@@ -168,7 +172,7 @@ def matchup_context(
         (players["player_id"] == pitcher_id) & players["role"].isin(_PITCHER_ROLES)
     ]
     if prow.empty:
-        raise ValueError(f"pitcher_id {pitcher_id} not found among pitchers in players.parquet.")
+        raise ValueError(f"pitcher_id {pitcher_id} not found among pitchers in players.csv.")
     p_hand = str(prow["hand"].mode().iloc[0])
 
     h_stand = _hitter_stand(tables, hitter_id, p_hand)
@@ -253,7 +257,7 @@ def matchup_rating(
     if pitcher_rows.empty and not pitcher_has_arsenal:
         raise ValueError(
             f"pitcher_id {pitcher_id} not found: no matching pitcher in "
-            "players.parquet or pitcher_pitch.parquet."
+            "players.csv or pitcher_pitch.csv."
         )
     hitter_all_splits = hp[hp["batter_id"] == hitter_id]
     hitter_in_players = (
@@ -262,7 +266,7 @@ def matchup_rating(
     if hitter_all_splits.empty and not hitter_in_players:
         raise ValueError(
             f"hitter_id {hitter_id} not found: no matching hitter in "
-            "players.parquet or hitter_pitch.parquet."
+            "players.csv or hitter_pitch.csv."
         )
 
     # --- Handedness context --------------------------------------------------
@@ -287,16 +291,16 @@ def matchup_rating(
         p = pp[pp["pitcher_id"] == pitcher_id]
     if p.empty:
         raise ValueError(
-            f"pitcher_id {pitcher_id} has no arsenal rows in pitcher_pitch.parquet."
+            f"pitcher_id {pitcher_id} has no arsenal rows in pitcher_pitch.csv."
         )
 
     # --- League baselines ----------------------------------------------------
     if lg.empty:
-        raise ValueError("league_pitch.parquet is empty; cannot compute league baselines.")
+        raise ValueError("league_pitch.csv is empty; cannot compute league baselines.")
     lg_map = dict(zip(lg["pitch_type"], lg["lg_xwoba"]))
     lg_overall = float((lg["lg_xwoba"] * lg["lg_n"]).sum() / lg["lg_n"].sum())
     if not np.isfinite(lg_overall) or lg_overall <= 0:
-        raise ValueError("League-average xwOBA is not positive; check league_pitch.parquet.")
+        raise ValueError("League-average xwOBA is not positive; check league_pitch.csv.")
 
     # --- Pitch-type loop ------------------------------------------------------
     rows: list[dict] = []
