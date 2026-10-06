@@ -17,7 +17,8 @@ repository — same files, now public.
 - `data/pull_september.py` — the grocery run. Fetches raw Statcast pitch data.
 - `data/build_aggregates.py` — the prep cook. Turns 106,000 raw pitches into the
   summary tables the app actually reads.
-- `data/processed/*.csv` — the filing cabinet. Ready-to-use tables (see below).
+- `data/processed/*_part*.csv` — the filing cabinet. Ready-to-use tables (see below),
+  split into ~100KB parts (see the Parquet entry for why).
 - `requirements.txt` — the shopping list of Python packages the app needs.
 - `.streamlit/config.toml` — the interior design (dark theme, colors).
 
@@ -33,8 +34,11 @@ ship as CSV, not parquet — because GitHub's file API only transports text
 reliably, and binary files get mangled in transit (we verified this the hard
 way). At ~1.5MB total the speed difference is negligible, so CSV wins on
 robustness. Raw day-files stay parquet locally where nothing mangles them.
-Lesson: the "best" format depends on where the file has to travel, not just how
-fast it reads.
+One more wrinkle: the publishing tooling caps a single file's arguments at
+~128KB, so each table is split into ~100KB CSV parts (`hitter_pitch_part01.csv`,
+…) that the engine concatenates on load — values unrounded, so reassembly is
+exact. Lesson: the "best" format depends on where the file has to travel, not
+just how fast it reads.
 
 ## Z-score
 Answers: *"how many notches above or below average is this?"* Take league-average
