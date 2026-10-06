@@ -7,7 +7,7 @@ wOBA trend.
 
 Built as a portfolio project toward a pro-baseball front-office standard:
 dark, Savant-grade presentation, honest methodology, and zero live queries —
-everything runs off precomputed parquet aggregates committed in-repo.
+everything runs off precomputed CSV aggregates committed in-repo.
 
 ## Features
 
@@ -46,7 +46,7 @@ See `engine/matchup.py` for the full commented implementation.
 │   ├── __init__.py
 │   └── matchup.py          # load_aggregates(), matchup_rating(), dropdown helpers
 ├── data/
-│   ├── processed/          # precomputed *.parquet aggregates (committed, <100MB)
+│   ├── processed/          # precomputed *.csv aggregates (committed, <100MB)
 │   └── raw/                # raw Statcast pulls (gitignored, reproducible)
 ├── .streamlit/
 │   └── config.toml         # dark pro theme
@@ -59,14 +59,14 @@ See `engine/matchup.py` for the full commented implementation.
 
 | File | Contents |
 |---|---|
-| `hitter_pitch.parquet` | batter × pitch type × pitcher-hand: n, whiff%, xwOBA, SLG |
-| `pitcher_pitch.parquet` | pitcher × pitch type × batter-stand: usage%, velo/spin/movement, Stuff-lite |
-| `zone_hitter.parquet` | batter × zone (1–9): n, xwOBA |
-| `zone_pitcher.parquet` | pitcher × zone (1–9): pitch% |
-| `hitter_game.parquet` | batter × game: PA, wOBA |
-| `hitter_stand.parquet` | batter's most common side vs each pitcher hand |
-| `league_pitch.parquet` | league-average xwOBA per pitch type |
-| `players.parquet` | player id, name, role, hand |
+| `hitter_pitch.csv` | batter × pitch type × pitcher-hand: n, whiff%, xwOBA, SLG |
+| `pitcher_pitch.csv` | pitcher × pitch type × batter-stand: usage%, velo/spin/movement, Stuff-lite |
+| `zone_hitter.csv` | batter × zone (1–9): n, xwOBA |
+| `zone_pitcher.csv` | pitcher × zone (1–9): pitch% |
+| `hitter_game.csv` | batter × game: PA, wOBA |
+| `hitter_stand.csv` | batter's most common side vs each pitcher hand |
+| `league_pitch.csv` | league-average xwOBA per pitch type |
+| `players.csv` | player id, name, role, hand |
 
 ## Data pipeline
 
@@ -113,7 +113,7 @@ source .venv/bin/activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Make sure data/processed/*.parquet exists (built by the data pipeline)
+# 3. Make sure data/processed/*.csv exists (built by the data pipeline)
 
 # 4. Launch
 streamlit run app.py
@@ -123,12 +123,12 @@ The app opens at http://localhost:8501.
 
 ## Deploy to Streamlit Community Cloud (free)
 
-1. Push this repo to GitHub (make sure `data/processed/*.parquet` are committed —
-   total size is under 100MB, within GitHub/Streamlit limits).
+1. Push this repo to GitHub (make sure `data/processed/*.csv` are committed —
+   total size is ~1.5MB, within GitHub/Streamlit limits).
 2. Go to https://share.streamlit.io and sign in with GitHub.
 3. Click **New app** → select the repo, branch, and `app.py` as the main file.
 4. Deploy. That's it — `requirements.txt` is picked up automatically and the
-   committed parquet files load straight from the repo. No secrets or external
+   committed CSV files load straight from the repo. No secrets or external
    data connections needed.
 
 ## Notes & limitations
