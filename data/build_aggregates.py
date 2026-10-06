@@ -1,7 +1,7 @@
 """
 build_aggregates.py
 ===================
-Reads data/raw/statcast_2026-09-*.csv (built by pull_september.py) and
+Reads data/raw/statcast_2026-09-*.parquet (built by pull_september.py) and
 writes 8 lean aggregate tables to data/processed/ for the Streamlit dashboard.
 
 Tables (see module docstring of each builder for exact semantics):
