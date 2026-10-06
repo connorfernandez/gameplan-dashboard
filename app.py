@@ -4,7 +4,7 @@ Single-page app: pick a hitter and a pitcher, get a 100-scale matchup rating
 (100 = league-average expected production), a per-pitch-type breakdown, zone
 heatmaps for both players, and the hitter's rolling wOBA trend.
 
-Data: precomputed Statcast aggregates (parquet, committed in data/processed/).
+Data: precomputed Statcast aggregates (CSV, committed in data/processed/).
 No live queries happen inside the app. Team-neutral by design.
 """
 
@@ -44,7 +44,7 @@ MIN_PITCHER_PITCHES = 100
 
 @st.cache_data(show_spinner="Loading precomputed aggregates…")
 def get_tables() -> dict[str, pd.DataFrame]:
-    """Load all parquet tables (cached across reruns)."""
+    """Load all CSV tables (cached across reruns)."""
     return load_aggregates(str(PROCESSED_DIR))
 
 
@@ -54,7 +54,7 @@ except FileNotFoundError as e:
     st.error(
         "Could not load the precomputed data tables.\n\n"
         f"{e}\n\n"
-        "Expected `data/processed/*.parquet` next to `app.py` — run the data "
+        "Expected `data/processed/*.csv` next to `app.py` — run the data "
         "pipeline first (see README.md), then reload."
     )
     st.stop()
@@ -349,7 +349,7 @@ with st.expander("Methodology & data notes"):
         movement z-scored against league average and scaled so ~100 is average.
         It is *not* official Stuff+.
 
-        **Data.** Statcast via pybaseball, precomputed to parquet — the app makes
+        **Data.** Statcast via pybaseball, precomputed to CSV — the app makes
         no live queries. Date range in the current build: **{date_range_str}**.
         Team-neutral: no team filters anywhere in the app.
 
