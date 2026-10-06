@@ -1,0 +1,13 @@
+[theme]
+# Dark, pro, Savant-grade theme
+base = "dark"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#161b26"
+textColor = "#fafafa"
+# Red accent (elite) — pairs with the blue used for below-average ratings
+primaryColor = "#e63946"
+font = "sans serif"
+
+[server]
+# Keep the app snappy on the free Community Cloud tier
+maxUploadSize = 50
