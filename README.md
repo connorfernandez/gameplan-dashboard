@@ -57,16 +57,21 @@ See `engine/matchup.py` for the full commented implementation.
 
 ## Data tables (`data/processed/`)
 
-| File | Contents |
+Each table ships as one or more ~100KB CSV parts (`{table}_part01.csv`, …) —
+GitHub's file API transports text only, with a ~128KB per-file argument limit.
+`engine.load_aggregates()` concatenates the parts back into single DataFrames;
+values are unrounded, so parts reassemble exactly.
+
+| Table | Contents |
 |---|---|
-| `hitter_pitch.csv` | batter × pitch type × pitcher-hand: n, whiff%, xwOBA, SLG |
-| `pitcher_pitch.csv` | pitcher × pitch type × batter-stand: usage%, velo/spin/movement, Stuff-lite |
-| `zone_hitter.csv` | batter × zone (1–9): n, xwOBA |
-| `zone_pitcher.csv` | pitcher × zone (1–9): pitch% |
-| `hitter_game.csv` | batter × game: PA, wOBA |
-| `hitter_stand.csv` | batter's most common side vs each pitcher hand |
-| `league_pitch.csv` | league-average xwOBA per pitch type |
-| `players.csv` | player id, name, role, hand |
+| `hitter_pitch` | batter × pitch type × pitcher-hand: n, whiff%, xwOBA, SLG |
+| `pitcher_pitch` | pitcher × pitch type × batter-stand: usage%, velo/spin/movement, Stuff-lite |
+| `zone_hitter` | batter × zone (1–9): n, xwOBA |
+| `zone_pitcher` | pitcher × zone (1–9): pitch% |
+| `hitter_game` | batter × game: PA, wOBA |
+| `hitter_stand` | batter's most common side vs each pitcher hand |
+| `league_pitch` | league-average xwOBA per pitch type |
+| `players` | player id, name, role, hand |
 
 ## Data pipeline
 
@@ -113,7 +118,7 @@ source .venv/bin/activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Make sure data/processed/*.csv exists (built by the data pipeline)
+# 3. Make sure data/processed/*_part*.csv exists (built by the data pipeline)
 
 # 4. Launch
 streamlit run app.py
@@ -123,7 +128,7 @@ The app opens at http://localhost:8501.
 
 ## Deploy to Streamlit Community Cloud (free)
 
-1. Push this repo to GitHub (make sure `data/processed/*.csv` are committed —
+1. Push this repo to GitHub (make sure `data/processed/*_part*.csv` are committed —
    total size is ~1.5MB, within GitHub/Streamlit limits).
 2. Go to https://share.streamlit.io and sign in with GitHub.
 3. Click **New app** → select the repo, branch, and `app.py` as the main file.
