@@ -54,7 +54,7 @@ except FileNotFoundError as e:
     st.error(
         "Could not load the precomputed data tables.\n\n"
         f"{e}\n\n"
-        "Expected `data/processed/*.csv` next to `app.py` — run the data "
+        "Expected `data/processed/*_part*.csv` next to `app.py` — run the data "
         "pipeline first (see README.md), then reload."
     )
     st.stop()
