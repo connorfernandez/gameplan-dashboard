@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# Data: raw Statcast pulls are reproducible and stay out of git.
+# data/processed/*.parquet ARE committed (precomputed aggregates, <100MB total).
+data/raw/
+
+# Secrets
+.streamlit/secrets.toml
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
