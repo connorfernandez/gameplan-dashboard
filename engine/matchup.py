@@ -55,33 +55,36 @@ _PITCHER_ROLES = ("pitcher", "both")
 
 @lru_cache(maxsize=4)
 def load_aggregates(processed_dir: str | Path) -> dict[str, pd.DataFrame]:
-    """Load every aggregate CSV table into a dict of DataFrames.
+    """Load every aggregate table into a dict of DataFrames.
+
+    Each table ships as one or more ~100KB CSV parts
+    ({name}_part01.csv, {name}_part02.csv, ... — see _write_chunked() in
+    data/build_aggregates.py); parts are concatenated back into a single
+    DataFrame here.
 
     Cached (lru_cache) so repeated calls — e.g. one per matchup rating —
     don't re-read CSVs from disk. Raises FileNotFoundError with a clear
-    message naming the missing file.
-
-    (CSVs, not parquet, are committed in-repo: GitHub's file API only
-    transports text reliably, and at ~1.5MB total the speed difference is
-    negligible. Raw day-files stay parquet locally.)
+    message naming the missing table.
     """
     d = Path(processed_dir)
     if not d.is_dir():
         raise FileNotFoundError(
             f"Processed data directory not found: {d}\n"
-            "Expected the precomputed CSV tables at data/processed/ "
+            "Expected the precomputed CSV parts at data/processed/ "
             "(built by the data pipeline; see README.md)."
         )
     tables: dict[str, pd.DataFrame] = {}
     for name in TABLES:
-        f = d / f"{name}.csv"
-        if not f.exists():
+        parts = sorted(d.glob(f"{name}_part*.csv"))
+        if not parts:
             raise FileNotFoundError(
-                f"Missing required table: {f}\n"
+                f"Missing required table: {name} (no {name}_part*.csv in {d})\n"
                 "Run the data pipeline first (see README.md) so that all of "
-                f"{', '.join(t + '.csv' for t in TABLES)} exist."
+                f"{', '.join(t + '_part*.csv' for t in TABLES)} exist."
             )
-        tables[name] = pd.read_csv(f)
+        tables[name] = pd.concat(
+            (pd.read_csv(p) for p in parts), ignore_index=True
+        )
     return tables
 
 
