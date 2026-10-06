@@ -17,15 +17,24 @@ repository — same files, now public.
 - `data/pull_september.py` — the grocery run. Fetches raw Statcast pitch data.
 - `data/build_aggregates.py` — the prep cook. Turns 106,000 raw pitches into the
   summary tables the app actually reads.
-- `data/processed/*.parquet` — the filing cabinet. Ready-to-use tables (see below).
+- `data/processed/*.csv` — the filing cabinet. Ready-to-use tables (see below).
 - `requirements.txt` — the shopping list of Python packages the app needs.
 - `.streamlit/config.toml` — the interior design (dark theme, colors).
 
 ## Parquet
 A file format for tables — like a supercharged spreadsheet file. A CSV writes every
 number out longhand; parquet compresses and indexes the data, so it loads 10–50x
-faster in a fraction of the space. Our 106,000 pitches fit in 460KB because of it.
+faster in a fraction of the space. Our 106,000 raw pitches live in 4.8MB of
+parquet because of it.
 Rule of thumb: CSVs are for humans to eyeball, parquet is for apps to read fast.
+
+**Real-world tradeoff (from this project):** our *committed* aggregates actually
+ship as CSV, not parquet — because GitHub's file API only transports text
+reliably, and binary files get mangled in transit (we verified this the hard
+way). At ~1.5MB total the speed difference is negligible, so CSV wins on
+robustness. Raw day-files stay parquet locally where nothing mangles them.
+Lesson: the "best" format depends on where the file has to travel, not just how
+fast it reads.
 
 ## Z-score
 Answers: *"how many notches above or below average is this?"* Take league-average
