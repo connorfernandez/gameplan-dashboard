@@ -1,18 +1,18 @@
 """
 build_aggregates.py
 ===================
-Reads data/raw/statcast_2026-09-*.parquet (built by pull_september.py) and
+Reads data/raw/statcast_2026-09-*.csv (built by pull_september.py) and
 writes 8 lean aggregate tables to data/processed/ for the Streamlit dashboard.
 
 Tables (see module docstring of each builder for exact semantics):
-  1. hitter_pitch.parquet    (batter_id, batter_name, pitch_type, p_throws, n, whiff_pct, xwoba, slg)
-  2. pitcher_pitch.parquet   (pitcher_id, pitcher_name, pitch_type, stand, usage_pct, avg_velo, avg_spin, avg_pfx_x, avg_pfx_z, stuff_lite)
-  3. zone_hitter.parquet     (batter_id, batter_name, zone, n, xwoba)
-  4. zone_pitcher.parquet    (pitcher_id, pitcher_name, zone, pitch_pct)
-  5. hitter_game.parquet     (batter_id, batter_name, game_date, pa, woba)
-  6. hitter_stand.parquet    (batter_id, p_throws, stand)
-  7. league_pitch.parquet    (pitch_type, lg_xwoba, lg_n)
-  8. players.parquet         (player_id, player_name, role, hand)
+  1. hitter_pitch.csv    (batter_id, batter_name, pitch_type, p_throws, n, whiff_pct, xwoba, slg)
+  2. pitcher_pitch.csv   (pitcher_id, pitcher_name, pitch_type, stand, usage_pct, avg_velo, avg_spin, avg_pfx_x, avg_pfx_z, stuff_lite)
+  3. zone_hitter.csv     (batter_id, batter_name, zone, n, xwoba)
+  4. zone_pitcher.csv    (pitcher_id, pitcher_name, zone, pitch_pct)
+  5. hitter_game.csv     (batter_id, batter_name, game_date, pa, woba)
+  6. hitter_stand.csv    (batter_id, p_throws, stand)
+  7. league_pitch.csv    (pitch_type, lg_xwoba, lg_n)
+  8. players.csv         (player_id, player_name, role, hand)
 
 Usage:
     python data/build_aggregates.py
@@ -404,8 +404,10 @@ def main():
         "players":       build_players(df, batter_names, pitcher_names),
     }
     for name, t in tables.items():
-        path = PROC_DIR / f"{name}.parquet"
-        t.to_parquet(path, index=False)
+        # CSV (not parquet): the processed tables are committed to GitHub and
+        # GitHub's file API only transports text reliably. ~1.5MB total.
+        path = PROC_DIR / f"{name}.csv"
+        t.to_csv(path, index=False)
         print(f"Wrote {path.name}: {t.shape[0]:,} rows x {t.shape[1]} cols")
 
     # --- verification summary ---
@@ -426,7 +428,7 @@ def main():
     lg_woba = pe["woba_value"].sum() / pe["woba_denom"].sum()
     print(f"League wOBA (PA-end rows): {lg_woba:.3f}  [sanity target ~.310-.330]")
     # processed dir size
-    total_mb = sum(p.stat().st_size for p in PROC_DIR.glob("*.parquet")) / 1e6
+    total_mb = sum(p.stat().st_size for p in PROC_DIR.glob("*.csv")) / 1e6
     print(f"processed/ size: {total_mb:.1f} MB")
     # spot-check: top hitters by pitch volume
     top = df["batter"].value_counts().head(3)
