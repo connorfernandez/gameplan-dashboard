@@ -332,6 +332,32 @@ def build_players(df: pd.DataFrame, batter_names: pd.Series, pitcher_names: dict
 
 
 # ----------------------------------------------------------------------------
+# Chunked CSV output
+# ----------------------------------------------------------------------------
+# GitHub's file API only transports text reliably, and a single file's worth
+# of arguments can't exceed ~128KB through the tooling used to publish this
+# repo — so each aggregate table is written as one or more ~100KB CSV parts
+# ({name}_part01.csv, {name}_part02.csv, ...). engine.load_aggregates()
+# globs and concatenates the parts back into one DataFrame. Values are NOT
+# rounded: parts reassemble bit-identically to the single table.
+def _write_chunked(df: pd.DataFrame, directory: Path, name: str,
+                   max_bytes: int = 100_000) -> list[str]:
+    import io
+    buf = io.StringIO()
+    df.to_csv(buf, index=False)
+    total = len(buf.getvalue())
+    n_parts = max(1, -(-total // max_bytes))  # ceil division
+    rows_per = -(-len(df) // n_parts)         # ceil division
+    written = []
+    for i in range(n_parts):
+        part = df.iloc[i * rows_per:(i + 1) * rows_per]
+        p = directory / f"{name}_part{i + 1:02d}.csv"
+        part.to_csv(p, index=False)
+        written.append(p.name)
+    return written
+
+
+# ----------------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------------
 def main():
@@ -404,11 +430,13 @@ def main():
         "players":       build_players(df, batter_names, pitcher_names),
     }
     for name, t in tables.items():
-        # CSV (not parquet): the processed tables are committed to GitHub and
-        # GitHub's file API only transports text reliably. ~1.5MB total.
-        path = PROC_DIR / f"{name}.csv"
-        t.to_csv(path, index=False)
-        print(f"Wrote {path.name}: {t.shape[0]:,} rows x {t.shape[1]} cols")
+        # Chunked CSV (not parquet): the processed tables are committed to
+        # GitHub and GitHub's file API only transports text reliably, with a
+        # ~128KB per-file argument limit — so tables ship as ~100KB parts.
+        parts = _write_chunked(t, PROC_DIR, name)
+        print(f"Wrote {name}: {t.shape[0]:,} rows x {t.shape[1]} cols "
+              f"-> {len(parts)} part(s): {parts[0]}"
+              + (f" .. {parts[-1]}" if len(parts) > 1 else ""))
 
     # --- verification summary ---
     print("\n" + "=" * 60)
